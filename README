@@ -5,20 +5,29 @@ the following classes:
 - JsonRpc
   A tiny wrapper around XMLHttpRequest, which deals with JSON-encoded requests
   and responses. Requests and responses can contain arbitrary data structures,
-  which can be serialized without loss with JSON.
+  which can be serialized without loss with JSON encoding.
+  Avoid using JsonRpc instances directly, because they don't support multiple
+  outstanding calls. It is much better wrapping them into classes described
+  below.
 
 - QueuedRpc
-  Queues incoming RPCs, so they are executed serially over a base RPC
-  implementation. Use this class for serial execution of multiple
-  RPCs over a single base XMLHttpRequest.
+  Queues incoming RPCs, so they are executed serially over the base RPC
+  implementation. QueuedRpc completely eliminates headache related to
+  "Is it safe to issue yet another request over our RPC implementation?
+  Probably the implementation is currently busy with the previous request,
+  which will be canceled at the moment we'll issue new one?"
+  Using a single QueueRpc instance instead of multiple JsonRpc instances
+  can reduce load on your server, since there is no need in establishing
+  multiple connections to the server.
 
 - BatchedRpc
-  Groups incoming RPCs in batches before forwarding them to base RPC
+  Groups incoming RPCs in batches before forwarding them to the base RPC
   implementation. RPC batching is a well-known approach for minimizing overhead
   associated with each RPC. This overhead may include:
   - connection establishing to the server;
-  - per-RPC authentication;
-  - per-RPC serialization overhead (for instance, HTTP headers);
+  - authentication;
+  - fetching user's data from slow storage;
+  - serialization overhead (for instance, HTTP headers or RPC message envelope);
 
 - RateLimitedRpc
   Limits the rate of RPCs by discarding incoming RPCs if the time since
@@ -30,10 +39,12 @@ the following classes:
 The library was designed with flexibility and extensibility in mind.
 
 QueuedRpc, BatchedRpc and RateLimitedRpc instances can be easily combined
-in any order and depth through the corresponding base_rpc_call arguments.
+in any order and arbitrary depth through the corresponding base_rpc_call
+arguments.
 
-It is easy to hook up per-RPC authentication or status check at any level
-by inspecting and altering arguments passed to base_rpc_call callbacks.
+It is easy to hook up arbitrary filtering (for example, per-RPC authentication
+or response status check) at any level by inspecting and altering arguments
+passed to base_rpc_call callbacks.
 
 Though the library encourages JSON encoding for RPCs via JsonRpc, it is easy
 to switch to other RPC encodings by replacing JsonRpc instances with
@@ -41,3 +52,5 @@ the corresponding implementation.
 
 Read more about design desicions behind the API of the library
 at http://dev.by/blog/40345 (in Russian).
+
+Author: Aliaksandr Valialkin (valyala@gmail.com)
