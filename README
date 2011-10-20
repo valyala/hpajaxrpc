@@ -161,16 +161,18 @@ Advanced usage.
 
   // Queued authenticated RPCs via queued_rpc with error handling.
   auth_token = 'authentication-token';
-  auth_response_callback = function(response_data, base_response_callback) {
-    if (!response_data[0]) {
-      throw 'authentication failed';
-    }
-    base_response_callback(response_data[1]);
+  auth_response_callback = function(base_response_callback) {
+    return function(response_data) {
+      if (!response_data[0]) {
+        throw 'authentication failed';
+      }
+      base_response_callback(response_data[1]);
+    };
   };
   auth_queued_rpc_call = function(rpc_endpoint, request_data, response_callback,
     finalize_callback) {
     queued_rpc.run(rpc_endpoint, [auth_token, request_data],
-        auth_response_callback, finalize_callback);
+        auth_response_callback(response_callback), finalize_callback);
   };
   for (i = 0; i < 10; i++) {
     auth_queued_rpc.run('/sum-authenticated', [i, 30],
@@ -190,7 +192,7 @@ Advanced usage.
   auth_batched_rpc_call = function(request_data, response_callback,
       finalize_callback) {
     queued_rpc.run('/sum-batched-authenticated', [auth_token, request_data],
-        auth_response_callback, finalize_callback);
+        auth_response_callback(response_callback), finalize_callback);
   };
   auth_batched_rpc = new hpajaxrpc.BatchedRpc(auth_batched_rpc_call, 500);
   for (i = 0; i < 10; i++) {
