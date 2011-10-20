@@ -261,3 +261,24 @@ Advanced usage.
   // This call will be successfully finished provided the given rpc endpoint
   // works correctly.
   retry_queued_rpc.run('/sum', [1, 2]);
+
+
+How to properly implement base_rpc_call?
+
+The base_rpc_call callback is passed into constructors of QueuedRpc,
+BatchedRpc and RateLimitedRpc classes. These classes call base_rpc_call
+whenever they decide to issue RPC. All these classes guarantee that the next
+base_rpc_call will be called only after execution of finalize_callback from
+the previous call to base_rpc_call. So it is safe to use non-reentrant RPC
+implementations in base_rpc_call such as XMLHttpRequest and JsonRpc, wich don't
+support multiple outstanding RPC calls.
+Each base_rpc_call implementation must abide the following rules:
+- it must not throw exceptions;
+- it must guarantee that the finalize_callback passed into it will be called
+  only once. I.e. it must be always called, but cannot be called multiple times.
+
+Note that run() methods of QueuedRpc, BatchedRpc and RateLimitedRpc abide these
+rules, so if your base_rpc_call implementation pass finalize_callback to one of
+these methods, it will be definitely called.
+If your base_rpc_call implementation doesn't abide these rules, then everything
+can happen. In most cases your RPCs will stop working.
