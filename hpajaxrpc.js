@@ -140,15 +140,12 @@ hpajaxrpc = (function() {
         finalize_callbacks.push(rpc_args[2]);
       });
       this._batched_rpc_args = [];
-      var error_message;
       var batched_response_callback = function(batched_response_data) {
         if (!(batched_response_data instanceof Array)) {
-          error_message = 'batched_response_data='+JSON.stringify(batched_response_data)+' should be instance of Array';
-          return;
+          throw 'batched_response_data='+JSON.stringify(batched_response_data)+' should be instance of Array';
         }
         if (batched_response_data.length != response_callbacks.length) {
-          error_message = 'unexpected batched_response_data size='+batched_response_data.length+', expected='+response_callbacks.length;
-          return;
+          throw 'unexpected batched_response_data size='+batched_response_data.length+', expected='+response_callbacks.length;
         }
         batched_response_data.forEach(function(response_data, index) {
           issueCallback(response_callbacks[index], response_data);
@@ -161,10 +158,6 @@ hpajaxrpc = (function() {
         }
         else {
           that._is_rpc_in_flight = false;
-        }
-        if (error_message && status_code == statusCodes.SUCCESS) {
-          status_code = statusCodes.JSON_PARSE_ERROR;
-          status_data = error_message;
         }
         finalize_callbacks.forEach(function(finalize_callback) {
           issueCallback(finalize_callback, status_code, status_data);
