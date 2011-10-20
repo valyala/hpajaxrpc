@@ -154,8 +154,7 @@ Basic usage.
       });
 
   // Issue the same RPC every second.
-  interval = 1000;
-  setInterval(function() { queued_rpc.run('/health-check'); }, interval);
+  setInterval(function() { queued_rpc.run('/health-check'); }, 1000);
 
 
 Advanced usage.
