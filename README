@@ -132,7 +132,7 @@ Advanced usage.
     auth_queued_rpc.run('/sum-authenticated', [i, 30],
         function(result) { alert(result); },
         function(status_code, status_data) {
-          if (status_code != hpajaxrpc.JsonRpc.statusCodes.SUCCESS) {
+          if (status_code != hpajaxrpc.statusCodes.SUCCESS) {
             alert('error: status_code=' + status_code + ', status_data=[' +
                 status_data + ']');
             // The following values will be passed on authentication failure:

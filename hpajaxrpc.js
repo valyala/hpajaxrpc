@@ -25,6 +25,14 @@
  */
 
 hpajaxrpc = (function() {
+  var statusCodes = {
+    SUCCESS: 0,
+    HTTP_ERROR: 1,
+    JSON_STRINGIFY_ERROR: 2,
+    JSON_PARSE_ERROR: 3,
+    RESPONSE_CALLBACK_ERROR: 4,
+  };
+
   var issueCallback = function(callback, arg1, arg2) {
     if (callback) {
       callback(arg1, arg2);
@@ -35,17 +43,8 @@ hpajaxrpc = (function() {
     this._xhr = new XMLHttpRequest();
   };
 
-  JsonRpc.statusCodes = {
-    SUCCESS: 0,
-    HTTP_ERROR: 1,
-    JSON_STRINGIFY_ERROR: 2,
-    JSON_PARSE_ERROR: 3,
-    RESPONSE_CALLBACK_ERROR: 4,
-  };
-
   JsonRpc.prototype = {
     run: function(rpc_endpoint, request_data, response_callback, finalize_callback) {
-      var statusCodes = JsonRpc.statusCodes;
       var request_text;
       try {
         request_text = JSON.stringify(request_data);
@@ -163,8 +162,8 @@ hpajaxrpc = (function() {
         else {
           that._is_rpc_in_flight = false;
         }
-        if (error_message && status_code == JsonRpc.statusCodes.SUCCESS) {
-          status_code = JsonRpc.statusCodes.JSON_PARSE_ERROR;
+        if (error_message && status_code == statusCodes.SUCCESS) {
+          status_code = statusCodes.JSON_PARSE_ERROR;
           status_data = error_message;
         }
         finalize_callbacks.forEach(function(finalize_callback) {
@@ -237,7 +236,7 @@ hpajaxrpc = (function() {
         this._rpc_time = Date.now();
       }
       else {
-        issueCallback(this._last_rpc_args[2], JsonRpc.statusCodes.SUCCESS);
+        issueCallback(this._last_rpc_args[2], statusCodes.SUCCESS);
       }
       this._last_rpc_args = [request_data, response_callback, finalize_callback];
       if (!this._is_rpc_in_flight) {
@@ -248,6 +247,7 @@ hpajaxrpc = (function() {
   };
 
   return {
+    statusCodes: statusCodes,
     JsonRpc: JsonRpc,
     QueuedRpc: QueuedRpc,
     BatchedRpc: BatchedRpc,
