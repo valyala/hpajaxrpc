@@ -170,5 +170,51 @@ Advanced usage.
         function(result) { alert('pow=' + result); });
   }
 
+  // Handle RPCs discarded via rate_limited_rpc.
+  window.addEventListener('mousemove', function(e) {
+    var is_complete = false;
+    rate_limited_rpc.run([e.clientX, e.clientY],
+        function(response_data) { is_complete = true; alert(response_data); },
+        function(status_code) {
+          if (status_code == hpajaxrpc.statusCodes.SUCCESS && !is_complete) {
+            alert('the rpc [' + e.clientX + ', ' + e.clientY +
+                '] has been discarded');
+          }
+        });
+  });
+
+  // Automatic RPC retry on HTTP failure using exponential backoff algorithm.
+  min_retry_interval = 100;
+  max_retry_interval = 10000;
+  retry_queued_rpc_call = function(rpc_endpoint, request_data,
+      response_callback, finalize_callback) {
+    var retry_interval = min_retry_interval;
+    var modified_finalize_callback = function(status_code, status_data) {
+      finalize_callback(status_code, status_data);
+      if (status_code == hpajaxrpc.statusCodes.HTTP_ERROR) {
+        alert('the rpc has been failed due to HTTP error. http status code=' +
+            status_data + ', retrying in ' + retry_interval + ' milliseconds');
+        setTimeout(
+            function() {
+              queued_rpc.run(rpc_endpoint, request_data, response_callback,
+                modified_finalize_callback);
+            }, retry_interval);
+        retry_interval += retry_interval;
+        if (retry_interval > max_retry_interval) {
+          retry_interval = max_retry_interval;
+        }
+      }
+    };
+    queued_rpc.run(rpc_endpoint, request_data, response_callback,
+        modified_finalize_callback);
+  };
+  retry_queued_rpc = new hpajaxrpc.QueuedRpc(retry_queued_rpc_call);
+  // this call will be retried indefinitely, because of non-existing
+  // rpc_endpoint.
+  retry_queued_rpc.run('http://non.existing.rpc/endpoint', 123);
+  // this call will be successfully finished provided the given rpc endpoint
+  // works correctly.
+  retry_queued_rpc.run('/sum', [1, 2]);
+
 
 Author: Aliaksandr Valialkin (valyala@gmail.com)
