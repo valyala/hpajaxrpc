@@ -25,6 +25,12 @@
  */
 
 hpajaxrpc = (function() {
+  var issueCallback = function(callback, arg1, arg2) {
+    if (callback) {
+      callback(arg1, arg2);
+    }
+  };
+
   var JsonRpc = function() {
     this._xhr = new XMLHttpRequest();
   };
@@ -37,12 +43,6 @@ hpajaxrpc = (function() {
     RESPONSE_CALLBACK_ERROR: 4,
   };
 
-  JsonRpc.issueCallback = function(callback, arg1, arg2) {
-    if (callback) {
-      callback(arg1, arg2);
-    }
-  };
-
   JsonRpc.prototype = {
     run: function(rpc_endpoint, request_data, response_callback, finalize_callback) {
       var statusCodes = JsonRpc.statusCodes;
@@ -51,7 +51,7 @@ hpajaxrpc = (function() {
         request_text = JSON.stringify(request_data);
       }
       catch(e) {
-        JsonRpc.issueCallback(finalize_callback, statusCodes.JSON_STRINGIFY_ERROR, e);
+        issueCallback(finalize_callback, statusCodes.JSON_STRINGIFY_ERROR, e);
         return;
       }
       var xhr = this._xhr;
@@ -60,7 +60,7 @@ hpajaxrpc = (function() {
           return;
         }
         if (xhr.status != 200) {
-          JsonRpc.issueCallback(finalize_callback, statusCodes.HTTP_ERROR, xhr.status);
+          issueCallback(finalize_callback, statusCodes.HTTP_ERROR, xhr.status);
           return;
         }
         var response_data;
@@ -68,7 +68,7 @@ hpajaxrpc = (function() {
           response_data = JSON.parse(xhr.responseText);
         }
         catch(e) {
-          JsonRpc.issueCallback(finalize_callback, statusCodes.JSON_PARSE_ERROR, e);
+          issueCallback(finalize_callback, statusCodes.JSON_PARSE_ERROR, e);
           return;
         }
         if (response_callback) {
@@ -76,11 +76,11 @@ hpajaxrpc = (function() {
             response_callback(response_data);
           }
           catch(e) {
-            JsonRpc.issueCallback(finalize_callback, statusCodes.RESPONSE_CALLBACK_ERROR, e);
+            issueCallback(finalize_callback, statusCodes.RESPONSE_CALLBACK_ERROR, e);
             return;
           }
         }
-        JsonRpc.issueCallback(finalize_callback, statusCodes.SUCCESS);
+        issueCallback(finalize_callback, statusCodes.SUCCESS);
       };
       xhr.open('POST', rpc_endpoint, true);
       xhr.send(request_text);
@@ -103,7 +103,7 @@ hpajaxrpc = (function() {
         else {
           that._is_rpc_in_flight = false;
         }
-        JsonRpc.issueCallback(finalize_callback, status_code, status_data);
+        issueCallback(finalize_callback, status_code, status_data);
       };
       this._base_rpc_call(rpc_endpoint, request_data, response_callback, queued_finalize_callback);
     },
@@ -152,7 +152,7 @@ hpajaxrpc = (function() {
           return;
         }
         batched_response_data.forEach(function(response_data, index) {
-          JsonRpc.issueCallback(response_callbacks[index], response_data);
+          issueCallback(response_callbacks[index], response_data);
         });
       };
       var that = this;
@@ -168,7 +168,7 @@ hpajaxrpc = (function() {
           status_data = error_message;
         }
         finalize_callbacks.forEach(function(finalize_callback) {
-          JsonRpc.issueCallback(finalize_callback, status_code, status_data);
+          issueCallback(finalize_callback, status_code, status_data);
         });
       };
       this._base_rpc_call(batched_request_data, batched_response_callback, batched_finalize_callback);
@@ -227,7 +227,7 @@ hpajaxrpc = (function() {
         else {
           that._is_rpc_in_flight = false;
         }
-        JsonRpc.issueCallback(finalize_callback, status_code, status_data);
+        issueCallback(finalize_callback, status_code, status_data);
       };
       this._base_rpc_call(request_data, response_callback, rate_limited_finalize_callback);
     },
@@ -237,7 +237,7 @@ hpajaxrpc = (function() {
         this._rpc_time = Date.now();
       }
       else {
-        JsonRpc.issueCallback(this._last_rpc_args[2], JsonRpc.statusCodes.SUCCESS);
+        issueCallback(this._last_rpc_args[2], JsonRpc.statusCodes.SUCCESS);
       }
       this._last_rpc_args = [request_data, response_callback, finalize_callback];
       if (!this._is_rpc_in_flight) {
