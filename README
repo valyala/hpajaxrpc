@@ -215,6 +215,3 @@ Advanced usage.
   // this call will be successfully finished provided the given rpc endpoint
   // works correctly.
   retry_queued_rpc.run('/sum', [1, 2]);
-
-
-Author: Aliaksandr Valialkin (valyala@gmail.com)
