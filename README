@@ -1,7 +1,7 @@
 Hpajaxprc - compact RPC library for high-performance AJAX applications.
 
 Hpajaxrpc library consists of a single javascript file. It provides
-the following classes:
+the following classes behind hpajaxrpc namespace:
 - JsonRpc
   A tiny wrapper around XMLHttpRequest, which deals with JSON-encoded requests
   and responses. Requests and responses can contain arbitrary data structures,
@@ -51,5 +51,124 @@ the corresponding implementation.
 
 Read more about design desicions behind the API of the library
 at http://dev.by/blog/40345 (in Russian).
+
+
+Basic usage.
+
+  json_rpc = new hpajaxrpc.JsonRpc();
+
+  // Since it is unsafe issuing multiple outstanding calls to json_rpc.run(),
+  // wrap it into QueuedRpc object.
+  queued_rpc_call = function(rpc_endpoint, request_data, response_callback,
+      finalize_callback) {
+    json_rpc.run(rpc_endpoint, request_data, response_callback,
+        finalize_callback);
+  };
+  queued_rpc = new hpajaxrpc.QueuedRpc(queued_rpc_call);
+
+  // queued_rpc supports issuing multiple outstanding calls:
+  for (i = 0; i < 10; i++) {
+    queued_rpc.run('/sum', [10, i], function(result) { alert(result); });
+  }
+
+  // Batch rpc calls into a single queued_rpc call, which will be issued
+  // no more than once per a second.
+  batched_rpc_call = function(request_data, response_callback,
+      finalize_callback) {
+    queued_rpc.run('/sum-batched', request_data, response_callback,
+        finalize_callback);
+  };
+  batched_rpc = new hpajaxrpc.BatchedRpc(batched_rpc_call, 1000);
+  for (i = 0; i < 10; i++) {
+    batched_rpc.run([i, 20], function(result) { alert(result); });
+  }
+
+  // Obtain data relevant to the current cursor position in intelligent way,
+  // i.e. issue no more than one RPC per a second.
+  rate_limited_rpc_call = function(request_data, response_callback,
+      finalize_callback) {
+    queued_rpc.run('/get-data-for-cursor-position', request_data,
+        response_callback, finalize_callback);
+  };
+  rate_limited_rpc = new hpajaxrpc.RateLimitedRpc(rate_limited_rpc_call, 1000);
+  window.addEventListener('mousemove', function(e) {
+    rate_limited_rpc.run([e.clientX, e.clientY], function(response_data) {
+      alert(response_data);
+    });
+  });
+
+  // Complex datastructures in request and response.
+  request_data = {
+    list1: [1, 'foo', { bar: 'baz'}],
+    struct1: {
+      struct2: {
+        list2: ['foo', 'bar', 332],
+      },
+    },
+  };
+  queued_rpc.run('/echo', request_data,
+      function(response_data) {
+        alert(response_data.list1[2].bar); // 'baz'
+        alert(response_data.struct1.struct2.list2[0]); // 'foo'
+      });
+
+
+Advanced usage.
+
+  // Queued authenticated RPCs via queued_rpc with error handling.
+  auth_token = 'authentication-token';
+  auth_response_callback = function(response_data, base_response_callback) {
+    if (!response_data[0]) {
+      throw 'authentication failed';
+    }
+    base_response_callback(response_data[1]);
+  };
+  auth_queued_rpc_call = function(rpc_endpoint, request_data, response_callback,
+    finalize_callback) {
+    queued_rpc.run(rpc_endpoint, [auth_token, request_data],
+        auth_response_callback, finalize_callback);
+  };
+  for (i = 0; i < 10; i++) {
+    auth_queued_rpc.run('/sum-authenticated', [i, 30],
+        function(result) { alert(result); },
+        function(status_code, status_data) {
+          if (status_code != hpajaxrpc.JsonRpc.statusCodes.SUCCESS) {
+            alert('error: status_code=' + status_code + ', status_data=[' +
+                status_data + ']');
+            // The following values will be passed on authentication failure:
+            // status_code = RESPONSE_CALLBACK_ERROR
+            // status_data = 'authentication failed'
+          }
+        });
+  }
+
+  // Batched authenticated RPCs (one auth token per batch) via queued_rpc.
+  auth_batched_rpc_call = function(request_data, response_callback,
+      finalize_callback) {
+    queued_rpc.run('/sum-batched-authenticated', [auth_token, request_data],
+        auth_response_callback, finalize_callback);
+  };
+  auth_batched_rpc = new hpajaxrpc.BatchedRpc(auth_batched_rpc_call, 500);
+  for (i = 0; i < 10; i++) {
+    batched_rpc.run([i, i], function(result) { alert(result); });
+  }
+
+  // Batched multiplexor, i.e. handling of distinct RPC methods in a batch.
+  multiplexor_batched_rpc_call = function(request_data, response_callback,
+      finalize_callback) {
+    queued_rpc.run('/multiplexor-batched', request_data, response_callback,
+        finalize_callback);
+  };
+  multiplexor_batched_rpc = new hpajaxrpc.BatchedRpc(
+      multiplexor_batched_rpc_call, 300);
+  for (i = 0; i < 10; i++) {
+    multiplexor_batched_rpc.run(['sum', [i, 5]],
+        function(result) { alert('sum=' + result); });
+    multiplexor_batched_rpc.run(['mul', [i, 3]],
+        function(result) { alert('mul=' + result); });
+    multiplexor_batched_rpc.run(['pow', [2, i]],
+        function(result) { alert('pow=' + result); });
+  }
+
 
 Author: Aliaksandr Valialkin (valyala@gmail.com)
