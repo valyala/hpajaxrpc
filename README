@@ -38,9 +38,8 @@ the following classes:
 
 The library was designed with flexibility and extensibility in mind.
 
-QueuedRpc, BatchedRpc and RateLimitedRpc instances can be easily combined
-in any order and arbitrary depth through the corresponding base_rpc_call
-arguments.
+Aforementioned class instances can be easily combined in many ways through
+the corresponding base_rpc_call argument.
 
 It is easy to hook up arbitrary filtering (for example, per-RPC authentication
 or response status check) at any level by inspecting and altering arguments
