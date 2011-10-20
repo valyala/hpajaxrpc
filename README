@@ -97,7 +97,7 @@ Basic usage.
     });
   });
 
-  // Complex datastructures in request and response.
+  // Passing complex datastructures in request and response.
   request_data = {
     list1: [1, 'foo', { bar: 'baz'}],
     struct1: {
@@ -111,6 +111,10 @@ Basic usage.
         alert(response_data.list1[2].bar); // 'baz'
         alert(response_data.struct1.struct2.list2[0]); // 'foo'
       });
+
+  // Issue the same RPC every second.
+  interval = 1000;
+  setInterval(function() { queued_rpc.run('/health-check'); }, interval);
 
 
 Advanced usage.
