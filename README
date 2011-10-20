@@ -1,6 +1,6 @@
-Hpajaxprc - compact RPC library for high-performance AJAX applications.
+Hpajaxprc - lightweight RPC library for high-performance AJAX applications.
 
-Hpajaxrpc library consists of a single javascript file. It provides
+The library consists of a single small javascript file. It provides
 the following classes behind hpajaxrpc namespace:
 - JsonRpc
   A tiny wrapper around XMLHttpRequest, which deals with JSON-encoded requests
@@ -51,6 +51,47 @@ the corresponding implementation.
 
 Read more about design desicions behind the API of the library
 at http://dev.by/blog/40345 (in Russian).
+
+
+Compatibility.
+
+The library uses the following 'modern' features, which can be missing in old
+web browsers:
+- XMLHttpRequest
+- JSON
+- Array.prototype.forEach
+It is possible to use hpajaxrpc even in ancient browsers if these features
+will be properly emulated. Google for proper emulations - there are over 9000
+of them on the Internet. Check out the following resources at first:
+- http://en.wikipedia.org/wiki/XMLHttpRequest#History_and_support
+- https://github.com/douglascrockford/JSON-js
+- https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/forEach
+- http://kangax.github.com/es5-compat-table/
+
+
+Server-side code.
+
+The library doesn't provide server-side code, because it can be easily
+implemented after investigating JsonRpc code in hpajaxrpc.js file. The following
+pseudocode illustrates typical server-side code:
+
+  def json_request_handler(request, response):
+    request_text = request.body  # POST body
+    request_data = JSON.parse(request_text)
+    response_data = process_request(request_data)
+    response_text = JSON.stringify(response_data)
+    response.write(response_text)
+
+Batched RPCs require special handling, which can be easily implemented after
+investigating BatchedRpc code in hpajaxrpc.js file. Below is a typical
+process_request() implementation for batched RPCs:
+
+  def process_request(request_data_batched):
+    response_data_batched = []
+    for request_data in request_data_batched:
+      response_data = process_single_request(request_data)
+      response_data_batched.append(response_data)
+    return response_data_batched
 
 
 Basic usage.
