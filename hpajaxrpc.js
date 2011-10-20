@@ -146,6 +146,10 @@ BatchedRpc.prototype = {
 
     var error_message;
     var batched_response_callback = function(batched_response_data) {
+      if (!(batched_response_data instanceof Array)) {
+        error_message = 'batched_response_data='+JSON.stringify(batched_response_data)+' should be instance of Array';
+        return;
+      }
       if (batched_response_data.length != response_callbacks.length) {
         error_message = 'unexpected batched_response_data size='+batched_response_data.length+', expected='+response_callbacks.length;
         return;
