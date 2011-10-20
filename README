@@ -18,14 +18,14 @@ the following classes behind hpajaxrpc namespace:
   which will be canceled at the moment we'll issue new one?"
   Using a single QueueRpc instance instead of multiple JsonRpc instances
   can reduce load on your server, since there is no need in establishing
-  multiple connections to the server.
+  multiple connections to the server if all the RPCs use the same rpc_endpoint.
 
 - BatchedRpc
   Groups incoming RPCs in batches before forwarding them to the base RPC
   implementation. RPC batching is a well-known approach for minimizing overhead
   associated with each RPC. This overhead may include:
-  - connection establishing to the server;
-  - authentication;
+  - network latency;
+  - authentication and authorization;
   - fetching user's data from slow storage;
   - serialization overhead (for instance, HTTP headers or RPC message envelope);
 
@@ -38,12 +38,12 @@ the following classes behind hpajaxrpc namespace:
 
 The library was designed with flexibility and extensibility in mind.
 
-Aforementioned class instances can be easily combined in many ways through
-the corresponding base_rpc_call argument.
+Aforementioned class instances can be easily combined in various ways through
+the corresponding base_rpc_call argument. See examples below.
 
-It is easy to hook up arbitrary filtering (for example, per-RPC authentication
-or response status check) at any level by inspecting and altering arguments
-passed to base_rpc_call callbacks.
+It is easy to hook up arbitrary logic (for example, authentication,
+response status check or automatic RPC retrying) at any level by inspecting
+and altering arguments passed to base_rpc_call callbacks. See examples below.
 
 Though the library encourages JSON encoding for RPCs via JsonRpc, it is easy
 to switch to other RPC encodings by replacing JsonRpc instances with
