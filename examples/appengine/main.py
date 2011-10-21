@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import random
+
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
 from django.utils import simplejson
@@ -21,13 +23,6 @@ def echo_method(request_data):
   return request_data
 
 
-def echo_authenticated_method(request_data):
-  auth_token, request_data = request_data
-  if auth_token != 'secret1':
-    return [False]
-  return [True, request_data]
-
-
 def sum_method(request_data):
   a, b = request_data
   return a + b
@@ -40,7 +35,11 @@ class EchoRequestHandler(JsonRequestHandler):
 
 class EchoAuthenticatedRequestHandler(JsonRequestHandler):
   def process_request(self, request_data):
-    return echo_authenticated_method(request_data)
+    auth_token, request_data = request_data
+    if auth_token != 'secret1':
+      self.error(403)  # 403 Forbidden
+      return
+    return echo_method(request_data)
 
 
 class SumRequestHandler(JsonRequestHandler):
@@ -81,9 +80,18 @@ class SumAuthenticatedBatchedRequestHandler(JsonRequestHandler):
   def process_request(self, request_data):
     auth_token, request_data = request_data
     if auth_token != 'secret2':
-      return [False]
-    response_data = process_request_batched(request_data, sum_method)
-    return [True, response_data]
+      self.error(403)  # 403 Forbidden
+      return
+    return process_request_batched(request_data, sum_method)
+
+
+class SumAutoretryRequestHandler(JsonRequestHandler):
+  def process_request(self, request_data):
+    # Return 503 Service Unavailable error with 90% probability
+    if random.random() < 0.9:
+      self.error(503)
+      return
+    return sum_method(request_data)
 
 
 URL_MAP = [
@@ -93,6 +101,7 @@ URL_MAP = [
     ('/multiplexor', MultiplexorRequestHandler),
     ('/multiplexor-batched', MultiplexorBatchedRequestHandler),
     ('/sum-authenticated-batched', SumAuthenticatedBatchedRequestHandler),
+    ('/sum-autoretry', SumAutoretryRequestHandler),
 ]
 
 # initialize the application only once. The main() is called with each request,

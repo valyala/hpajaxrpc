@@ -54,20 +54,11 @@ queued_rpc_call = function(rpc_endpoint, request_data, response_callback,
 };
 queued_rpc = new hpajaxrpc.QueuedRpc(queued_rpc_call);
 
-auth_token = 'invalid-auth-token';
-authenticated_response_handler = function(response_callback) {
-  return function(request_data) {
-    var is_authenticated = request_data[0];
-    if (!is_authenticated) {
-      throw 'request cannot be authenticated';
-    }
-    response_callback(request_data[1]);
-  };
-};
+auth_token = 'secret1';
 authenticated_queued_rpc_call = function(rpc_endpoint, request_data,
     response_callback, finalize_callback) {
-  queued_rpc.run(rpc_endpoint, [auth_token, request_data],
-      authenticated_response_handler(response_callback), finalize_callback);
+  queued_rpc.run(rpc_endpoint, [auth_token, request_data], response_callback,
+      finalize_callback);
 };
 authenticated_queued_rpc = new hpajaxrpc.QueuedRpc(
     authenticated_queued_rpc_call);
@@ -99,7 +90,7 @@ sum_rate_limited_rpc = new hpajaxrpc.RateLimitedRpc(sum_rate_limited_rpc_call,
 
 
 min_retry_interval = 100;
-max_retry_interval = 1000;
+max_retry_interval = 10000;
 autoretry_queued_rpc_call = function(rpc_endpoint, request_data,
     response_callback, finalize_callback) {
   var retry_interval = min_retry_interval;
@@ -226,13 +217,12 @@ sum_rate_limited = function() {
   }
 };
 
-autoretry = function() {
-  min_retry_interval = parseInt(_('autoretry-min-interval'));
-  max_retry_interval = parseInt(_('autoretry-max-interval'));
-  var rpc_endpoint = _('autoretry-rpc-endpoint');
-  autoretry_queued_rpc.run(rpc_endpoint, null,
+sum_autoretry = function() {
+  var a = parseFloat(_('sum-autoretry-a'));
+  var b = parseFloat(_('sum-autoretry-b'));
+  autoretry_queued_rpc.run('/sum-autoretry', [a, b],
       function(response) {
-        log('autoretry(rpc_endpoint=' + rpc_endpoint + ')=' + response);
+        log('sum_autoretry(' + a + ', ' + b +')=' + response);
       },
       default_finalize_callback);
 };
@@ -328,14 +318,10 @@ div {
 </div>
 
 <div>
-  <h3>Autoretry RPC</h3>
-  Rpc endpoint: <select id="autoretry-rpc-endpoint">
-    <option value="/echo">/echo (valid)</option>
-    <option value="/invalid-endpoint">/invalid-endpoint</option>
-  </select>
-  Minimum retry interval (ms): <input id="autoretry-min-interval" value="100" />
-  Maximum retry interval (ms): <input id="autoretry-max-interval" value="1000" />
-  <button onclick="autoretry()">RUN!</button>
+  <h3>Sum Autoretry RPC (min_retry_interval=0.1s, max_retry_interval=10s)</h3>
+  a: <input id="sum-autoretry-a" value="0.5" />
+  b: <input id="sum-autoretry-b" value="5.3" />
+  <button onclick="sum_autoretry()">RUN!</button>
 </div>
 </body>
 </html>
