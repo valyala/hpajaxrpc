@@ -312,3 +312,8 @@ rules, so if your base_rpc_call implementation pass finalize_callback to one of
 these methods, it will be definitely called.
 If your base_rpc_call implementation doesn't abide these rules, then everything
 can happen. In most cases your RPCs will stop working.
+
+
+Playground.
+
+See http://hpajaxrpc.appspot.com/ . This is a deployment of examples/appengine.
