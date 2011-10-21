@@ -3,10 +3,6 @@ version: 1
 runtime: python
 api_version: 1
 
-# use versioning on static resources if they become stale,
-# e.g. /img/version_num/image.png .
-default_expiration: "365d"
-
 handlers:
 - url: /
   static_files: index.html
