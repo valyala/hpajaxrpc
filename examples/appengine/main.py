@@ -47,7 +47,7 @@ class SumRequestHandler(JsonRequestHandler):
     return sum_method(request_data)
 
 
-Methods = {
+MultiplexorMethods = {
   'echo': echo_method,
   'sum': sum_method,
 }
@@ -55,7 +55,7 @@ Methods = {
 
 def multiplexor_method(request_data):
   method_name, request_data = request_data
-  return Methods[method_name](request_data)
+  return MultiplexorMethods[method_name](request_data)
 
 
 class MultiplexorRequestHandler(JsonRequestHandler):
@@ -87,8 +87,9 @@ class SumAuthenticatedBatchedRequestHandler(JsonRequestHandler):
 
 class SumAutoretryRequestHandler(JsonRequestHandler):
   def process_request(self, request_data):
-    # Return 503 Service Unavailable error with 90% probability
-    if random.random() < 0.9:
+    failure_rate, request_data = request_data
+    # Return 503 Service Unavailable error with failure_rate probability
+    if random.random() < failure_rate:
       self.error(503)
       return
     return sum_method(request_data)
@@ -103,9 +104,6 @@ URL_MAP = [
     ('/sum-authenticated-batched', SumAuthenticatedBatchedRequestHandler),
     ('/sum-autoretry', SumAutoretryRequestHandler),
 ]
-
-# initialize the application only once. The main() is called with each request,
-# so don't spend CPU time on repeated initialization of the application here.
 application = webapp.WSGIApplication(URL_MAP, debug=True)
 
 
@@ -115,4 +113,3 @@ def main():
 
 if __name__ == '__main__':
   main()
-

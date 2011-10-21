@@ -218,13 +218,18 @@ sum_rate_limited = function() {
 };
 
 sum_autoretry = function() {
+  var calls_count = parseInt(_('sum-autoretry-calls-count'));
+  var failure_rate = parseFloat(_('sum-autoretry-failure-rate'));
   var a = parseFloat(_('sum-autoretry-a'));
   var b = parseFloat(_('sum-autoretry-b'));
-  autoretry_queued_rpc.run('/sum-autoretry', [a, b],
-      function(response) {
-        log('sum_autoretry(' + a + ', ' + b +')=' + response);
-      },
-      default_finalize_callback);
+  for (var i = 0; i < calls_count; i++) {
+    autoretry_queued_rpc.run('/sum-autoretry', [failure_rate, [a, b]],
+        function(response) {
+          log('sum_autoretry(failure_rate=' + failure_rate +
+              ', a=' + a + ', b=' + b +')=' + response);
+        },
+        default_finalize_callback);
+  }
 };
 </script>
 <style type="text/css">
@@ -321,6 +326,8 @@ div {
   <h3>Sum Autoretry RPC (min_retry_interval=0.1s, max_retry_interval=10s)</h3>
   a: <input id="sum-autoretry-a" value="0.5" />
   b: <input id="sum-autoretry-b" value="5.3" />
+  Failure rate (0.0 - no failures, 1.0 - 100% failures): <input id="sum-autoretry-failure-rate" value="0.5" />
+  Calls count: <input id="sum-autoretry-calls-count" value="2" />
   <button onclick="sum_autoretry()">RUN!</button>
 </div>
 </body>
