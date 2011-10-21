@@ -93,6 +93,8 @@ process_request() implementation for batched RPCs:
       response_data_batched.append(response_data)
     return response_data_batched
 
+See examples/appengine/ for details.
+
 
 Basic usage.
 

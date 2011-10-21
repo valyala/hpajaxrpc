@@ -1,3 +1,5 @@
 This example shows hpajaxrpc basic usage on client and server side.
 The example can be run under AppEngine SDK or deployed directly to AppEngine.
 AppEngine SDK is available at http://code.google.com/appengine/downloads.html .
+
+Online version of this example is available at http://hpajaxrpc.appspot.com/ .
