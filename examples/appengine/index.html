@@ -56,6 +56,35 @@ sum_rate_limited_rpc_call = function(request_data, response_callback,
 sum_rate_limited_rpc = new hpajaxrpc.RateLimitedRpc(sum_rate_limited_rpc_call,
     rate_interval);
 
+
+min_retry_interval = 100;
+max_retry_interval = 60000;
+autoretry_queued_rpc_call = function(rpc_endpoint, request_data,
+    response_callback, finalize_callback) {
+  var retry_interval = min_retry_interval;
+  var autoretry_finalize_callback = function(status_code, status_data) {
+    if (status_code != hpajaxrpc.statusCodes.HTTP_ERROR ||
+        retry_interval == max_retry_interval) {
+      finalize_callback(status_code, status_data);
+      return;
+    }
+    alert('the rpc has been failed due to HTTP error. http status code=' +
+        status_data + ', retrying in ' + retry_interval + ' milliseconds');
+    setTimeout(
+        function() {
+          queued_rpc.run(rpc_endpoint, request_data, response_callback,
+              autoretry_finalize_callback);
+        }, retry_interval);
+    retry_interval += retry_interval;
+    if (retry_interval > max_retry_interval) {
+      retry_interval = max_retry_interval;
+    }
+  };
+  queued_rpc.run(rpc_endpoint, request_data, response_callback,
+      autoretry_finalize_callback);
+};
+autoretry_queued_rpc = new hpajaxrpc.QueuedRpc(autoretry_queued_rpc_call);
+
 _ = function(id) {
   return document.getElementById(id).value;
 };
@@ -149,6 +178,15 @@ sum_rate_limited = function() {
         default_finalize_callback);
   }
 };
+
+autoretry = function() {
+  min_retry_interval = parseInt(_('autoretry-min-interval'));
+  max_retry_interval = parseInt(_('autoretry-max-interval'));
+  var rpc_endpoint = _('autoretry-rpc-endpoint');
+  autoretry_queued_rpc.run(rpc_endpoint, null,
+      function(response) { alert('autoretry ' + response); },
+      default_finalize_callback);
+};
 </script>
 <style type="text/css">
 div {
@@ -220,6 +258,17 @@ div {
   b: <input id="sum-rate-limited-b" value="2" />
   Calls count: <input id="sum-rate-limited-calls-count" value="10" />
   <button onclick="sum_rate_limited()">Try clicking many times!</button>
+</div>
+
+<div>
+  <h3>Autoretry RPC</h3>
+  <select id="autoretry-rpc-endpoint">
+    <option value="/echo">/echo (valid)</option>
+    <option value="/invalid-endpoint">/invalid-endpoint</option>
+  </select>
+  Minimum retry interval (ms): <input id="autoretry-min-interval" value="100" />
+  Maximum retry interval (ms): <input id="autoretry-max-interval" value="1000" />
+  <button onclick="autoretry()">RUN!</button>
 </div>
 </body>
 </html>
