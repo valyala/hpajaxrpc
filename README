@@ -161,21 +161,40 @@ Advanced usage.
 
   // Queued authenticated RPCs via queued_rpc with error handling.
   auth_token = 'authentication-token';
-  auth_response_callback = function(base_response_callback) {
-    return function(response_data) {
-      if (!response_data[0]) {
-        throw 'authentication failed';
-      }
-      base_response_callback(response_data[1]);
-    };
-  };
   auth_queued_rpc_call = function(rpc_endpoint, request_data, response_callback,
     finalize_callback) {
-    queued_rpc.run(rpc_endpoint, [auth_token, request_data],
-        auth_response_callback(response_callback), finalize_callback);
+    queued_rpc.run(rpc_endpoint, [auth_token, request_data], response_callback,
+        finalize_callback);
   };
   for (i = 0; i < 10; i++) {
     auth_queued_rpc.run('/sum-authenticated', [i, 30],
+        function(result) { alert(result); },
+        function(status_code, status_data) {
+          if (status_code != hpajaxrpc.statusCodes.SUCCESS) {
+            alert('error: status_code=' + status_code + ', status_data=[' +
+                status_data + ']');
+            // The following values are expected on authentication failure:
+            // status_code = HTTP_ERROR
+            // status_data = 403  (Forbidden HTTP status code)
+          }
+        });
+  }
+
+  // Batched authenticated RPCs (one auth token per batch) via queued_rpc.
+  auth_batched_rpc_call = function(request_data, response_callback,
+      finalize_callback) {
+    var auth_response_callback = function(response_data) {
+      if (!response_data[0]) {
+        throw 'authentication failed';
+      }
+      response_callback(response_data[1]);
+    };
+    queued_rpc.run('/sum-batched-authenticated', [auth_token, request_data],
+        auth_response_callback, finalize_callback);
+  };
+  auth_batched_rpc = new hpajaxrpc.BatchedRpc(auth_batched_rpc_call, 500);
+  for (i = 0; i < 10; i++) {
+    batched_rpc.run([i, i],
         function(result) { alert(result); },
         function(status_code, status_data) {
           if (status_code != hpajaxrpc.statusCodes.SUCCESS) {
@@ -186,17 +205,6 @@ Advanced usage.
             // status_data = 'authentication failed'
           }
         });
-  }
-
-  // Batched authenticated RPCs (one auth token per batch) via queued_rpc.
-  auth_batched_rpc_call = function(request_data, response_callback,
-      finalize_callback) {
-    queued_rpc.run('/sum-batched-authenticated', [auth_token, request_data],
-        auth_response_callback(response_callback), finalize_callback);
-  };
-  auth_batched_rpc = new hpajaxrpc.BatchedRpc(auth_batched_rpc_call, 500);
-  for (i = 0; i < 10; i++) {
-    batched_rpc.run([i, i], function(result) { alert(result); });
   }
 
   // Batched multiplexor, i.e. handling of distinct RPC methods in a batch.
