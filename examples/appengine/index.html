@@ -135,21 +135,26 @@ default_finalize_callback = function(status_code, status_data) {
 
 echo = function() {
   var calls_count = parseInt(_('echo-calls-count'));
+  var request = JSON.parse(_('echo-json'));
   for (var i = 0; i < calls_count; i++) {
-    queued_rpc.run('/echo', JSON.parse(_('echo-json')),
-        function(response) { log('echo ' + JSON.stringify(response)); },
+    queued_rpc.run('/echo', request,
+        function(response) {
+          log('echo(' + JSON.stringify(request) + ')=' +
+              JSON.stringify(response));
+        },
         default_finalize_callback);
   }
 };
 
 echo_authenticated = function() {
   var calls_count = parseInt(_('echo-authenticated-calls-count'));
+  var request = JSON.parse(_('echo-authenticated-json'));
   auth_token = _('echo-authenticated-auth-token');
   for (var i = 0; i < calls_count; i++) {
-    authenticated_queued_rpc.run('/echo-authenticated',
-        JSON.parse(_('echo-authenticated-json')),
+    authenticated_queued_rpc.run('/echo-authenticated', request,
         function(response) {
-          log('echo authenticated ' + JSON.stringify(response));
+          log('echo_authenticated(' + JSON.stringify(request) + ')=' +
+              JSON.stringify(response));
         },
         default_finalize_callback);
   }
@@ -161,7 +166,7 @@ sum = function() {
   var b = parseFloat(_('sum-b'));
   for (var i = 0; i < calls_count; i++) {
     queued_rpc.run('/sum', [a, b],
-        function(response) { log('sum=' + response); },
+        function(response) { log('sum(' + a + ', ' + b + ')=' + response); },
         default_finalize_callback);
   }
 };
@@ -173,7 +178,8 @@ multiplexor = function() {
   for (var i = 0; i < calls_count; i++) {
     queued_rpc.run('/multiplexor', [method, args],
         function(response) {
-          log('multiplexor(' + method + ')=' + JSON.stringify(response));
+          log('multiplexor(method=' + method + ', args=' +
+              JSON.stringify(args) + ')=' + JSON.stringify(response));
         },
         default_finalize_callback);
   }
@@ -186,8 +192,8 @@ multiplexor_batched = function() {
   for (var i = 0; i < calls_count; i++) {
     multiplexor_batched_rpc.run([method, args],
         function(response) {
-          log('multiplexor_batched(' + method + ')=' +
-              JSON.stringify(response));
+          log('multiplexor_batched(method=' + method + ', args=' +
+              JSON.stringify(args) + ')=' + JSON.stringify(response));
         },
         default_finalize_callback);
   }
@@ -200,7 +206,9 @@ sum_authenticated_batched = function() {
   auth_token = _('sum-authenticated-batched-auth-token');
   for (var i = 0; i < calls_count; i++) {
     sum_authenticated_batched_rpc.run([a, b],
-        function(response) { log('sum_authenticated_batched=' + response); },
+        function(response) {
+          log('sum_authenticated_batched(' + a + ', ' + b + ')=' + response);
+        },
         default_finalize_callback);
   }
 };
@@ -211,7 +219,9 @@ sum_rate_limited = function() {
   var b = parseFloat(_('sum-rate-limited-b'));
   for (var i = 0; i < calls_count; i++) {
     sum_rate_limited_rpc.run([a, b],
-        function(response) { log('sum_rate_limited=' + response); },
+        function(response) {
+          log('sum_rate_limited(' + a + ', ' + b + ')=' + response);
+        },
         default_finalize_callback);
   }
 };
@@ -221,7 +231,9 @@ autoretry = function() {
   max_retry_interval = parseInt(_('autoretry-max-interval'));
   var rpc_endpoint = _('autoretry-rpc-endpoint');
   autoretry_queued_rpc.run(rpc_endpoint, null,
-      function(response) { log('autoretry ' + response); },
+      function(response) {
+        log('autoretry(rpc_endpoint=' + rpc_endpoint + ')=' + response);
+      },
       default_finalize_callback);
 };
 </script>
@@ -278,7 +290,7 @@ div {
 
 <div>
   <h3>Multiplexor RPC</h3>
-  <select id="multiplexor-method">
+  Method: <select id="multiplexor-method">
     <option value="echo">echo</option>
     <option value="sum">sum</option>
   </select>
@@ -289,7 +301,7 @@ div {
 
 <div>
   <h3>Multiplexor Batched RPC (batch_interval=1s)</h3>
-  <select id="multiplexor-batched-method">
+  Method: <select id="multiplexor-batched-method">
     <option value="echo">echo</option>
     <option value="sum">sum</option>
   </select>
@@ -317,7 +329,7 @@ div {
 
 <div>
   <h3>Autoretry RPC</h3>
-  <select id="autoretry-rpc-endpoint">
+  Rpc endpoint: <select id="autoretry-rpc-endpoint">
     <option value="/echo">/echo (valid)</option>
     <option value="/invalid-endpoint">/invalid-endpoint</option>
   </select>
