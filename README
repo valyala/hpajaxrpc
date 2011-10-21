@@ -18,7 +18,7 @@ the following classes behind hpajaxrpc namespace:
   which will be canceled at the moment we'll issue new one?"
   Using a single QueueRpc instance instead of multiple JsonRpc instances
   can reduce load on your server, since there is no need in establishing
-  multiple connections to the server if all the RPCs use the same rpc_endpoint.
+  multiple connections to the server.
 
 - BatchedRpc
   Groups incoming RPCs in batches before forwarding them to the base RPC
