@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>hpajaxrpc examples</title>
+<script type="text/javascript" src="https://raw.github.com/valyala/hpajaxrpc/master/hpajaxrpc.js"></script>
+<script type="text/javascript">
+json_rpc = new hpajaxrpc.JsonRpc();
+
+queued_rpc_call = function(rpc_endpoint, request_data, response_callback,
+    finalize_callback) {
+  json_rpc.run(rpc_endpoint, request_data, response_callback,
+      finalize_callback);
+};
+queued_rpc = new hpajaxrpc.QueuedRpc(queued_rpc_call);
+
+auth_token = 'invalid-auth-token';
+authenticated_response_handler = function(response_callback) {
+  return function(request_data) {
+    var is_authenticated = request_data[0];
+    if (!is_authenticated) {
+      throw 'request cannot be authenticated';
+    }
+    response_callback(request_data[1]);
+  };
+};
+authenticated_queued_rpc_call = function(rpc_endpoint, request_data,
+    response_callback, finalize_callback) {
+  queued_rpc.run(rpc_endpoint, [auth_token, request_data],
+      authenticated_response_handler(response_callback), finalize_callback);
+};
+authenticated_queued_rpc = new hpajaxrpc.QueuedRpc(
+    authenticated_queued_rpc_call);
+
+batch_interval = 1000;
+multiplexor_batched_rpc_call = function(request_data, response_callback,
+    finalize_callback) {
+  queued_rpc.run('/multiplexor-batched', request_data, response_callback,
+      finalize_callback);
+};
+multiplexor_batched_rpc = new hpajaxrpc.BatchedRpc(multiplexor_batched_rpc_call,
+    batch_interval);
+
+sum_authenticated_batched_rpc_call = function(request_data, response_callback,
+    finalize_callback) {
+  authenticated_queued_rpc.run('/sum-authenticated-batched', request_data,
+      response_callback, finalize_callback);
+};
+sum_authenticated_batched_rpc = new hpajaxrpc.BatchedRpc(
+    sum_authenticated_batched_rpc_call, batch_interval);
+
+rate_interval = 5000;
+sum_rate_limited_rpc_call = function(request_data, response_callback,
+    finalize_callback) {
+  queued_rpc.run('/sum', request_data, response_callback, finalize_callback);
+};
+sum_rate_limited_rpc = new hpajaxrpc.RateLimitedRpc(sum_rate_limited_rpc_call,
+    rate_interval);
+
+_ = function(id) {
+  return document.getElementById(id).value;
+};
+
+default_finalize_callback = function(status_code, status_data) {
+  if (status_code != hpajaxrpc.statusCodes.SUCCESS) {
+    alert('error: status_code=' + status_code + ', status_data=[' +
+        status_data + ']');
+  }
+};
+
+echo = function() {
+  var calls_count = parseInt(_('echo-calls-count'));
+  for (var i = 0; i < calls_count; i++) {
+    queued_rpc.run('/echo', JSON.parse(_('echo-json')),
+        function(response) { alert('echo ' + JSON.stringify(response)); },
+        default_finalize_callback);
+  }
+};
+
+echo_authenticated = function() {
+  var calls_count = parseInt(_('echo-authenticated-calls-count'));
+  auth_token = _('echo-authenticated-auth-token');
+  for (var i = 0; i < calls_count; i++) {
+    authenticated_queued_rpc.run('/echo-authenticated',
+        JSON.parse(_('echo-authenticated-json')),
+        function(response) {
+          alert('echo authenticated ' + JSON.stringify(response));
+        },
+        default_finalize_callback);
+  }
+};
+
+sum = function() {
+  var calls_count = parseInt(_('sum-calls-count'));
+  var a = parseFloat(_('sum-a'));
+  var b = parseFloat(_('sum-b'));
+  for (var i = 0; i < calls_count; i++) {
+    queued_rpc.run('/sum', [a, b],
+        function(response) { alert('sum=' + response); },
+        default_finalize_callback);
+  }
+};
+
+multiplexor = function() {
+  var calls_count = parseInt(_('multiplexor-calls-count'));
+  var method = _('multiplexor-method');
+  var args = JSON.parse(_('multiplexor-args'));
+  for (var i = 0; i < calls_count; i++) {
+    queued_rpc.run('/multiplexor', [method, args],
+        function(response) {
+          alert('multiplexor(' + method + ')=' + JSON.stringify(response));
+        },
+        default_finalize_callback);
+  }
+};
+
+multiplexor_batched = function() {
+  var calls_count = parseInt(_('multiplexor-batched-calls-count'));
+  var method = _('multiplexor-batched-method');
+  var args = JSON.parse(_('multiplexor-batched-args'));
+  for (var i = 0; i < calls_count; i++) {
+    multiplexor_batched_rpc.run([method, args],
+        function(response) {
+          alert('multiplexor_batched(' + method + ')=' +
+              JSON.stringify(response));
+        },
+        default_finalize_callback);
+  }
+};
+
+sum_authenticated_batched = function() {
+  var calls_count = parseInt(_('sum-authenticated-batched-calls-count'));
+  var a = parseFloat(_('sum-authenticated-batched-a'));
+  var b = parseFloat(_('sum-authenticated-batched-b'));
+  auth_token = _('sum-authenticated-batched-auth-token');
+  for (var i = 0; i < calls_count; i++) {
+    sum_authenticated_batched_rpc.run([a, b],
+        function(response) { alert('sum_authenticated_batched=' + response); },
+        default_finalize_callback);
+  }
+};
+
+sum_rate_limited = function() {
+  var calls_count = parseInt(_('sum-rate-limited-calls-count'));
+  var a = parseFloat(_('sum-rate-limited-a'));
+  var b = parseFloat(_('sum-rate-limited-b'));
+  for (var i = 0; i < calls_count; i++) {
+    sum_rate_limited_rpc.run([a, b],
+        function(response) { alert('sum_rate_limited=' + response); },
+        default_finalize_callback);
+  }
+};
+</script>
+<style type="text/css">
+div {
+  border: 1px solid black;
+  margin: 10px;
+  padding: 10px;
+}
+</style>
+</head>
+<body>
+<h1><a href="https://github.com/valyala/hpajaxrpc">hpajaxrpc</a> examples</h1>
+<div>
+  <h3>Echo RPC</h3>
+  <a href="http://www.ietf.org/rfc/rfc4627.txt">Valid JSON</a>: <input id="echo-json" value="[1, &quot;foo&quot;, { &quot;bar&quot;: [3, 4] }]" />
+  Calls count: <input id="echo-calls-count" value="2" />
+  <button onclick="echo()">RUN!</button>
+</div>
+
+<div>
+  <h3>Echo Authenticated RPC</h3>
+  <a href="http://www.ietf.org/rfc/rfc4627.txt">Valid JSON</a>: <input id="echo-authenticated-json" value="[&quot;a&quot;, 3, { &quot;b&quot;: 2 }]" />
+  Auth token: <input id="echo-authenticated-auth-token" value="secret1" />
+  Calls count: <input id="echo-authenticated-calls-count" value="2" />
+  <button onclick="echo_authenticated()">RUN!</button>
+</div>
+
+<div>
+  <h3>Sum RPC</h3>
+  a: <input id="sum-a" value="1" />
+  b: <input id="sum-b" value="2" />
+  Calls count: <input id="sum-calls-count" value="2" />
+  <button onclick="sum()">RUN!</button>
+</div>
+
+<div>
+  <h3>Multiplexor RPC</h3>
+  <select id="multiplexor-method">
+    <option value="echo">echo</option>
+    <option value="sum">sum</option>
+  </select>
+  Arguments (<a href="http://www.ietf.org/rfc/rfc4627.txt">Valid JSON</a>): <input id="multiplexor-args" value="[5, 6]" />
+  Calls count: <input id="multiplexor-calls-count" value="2" />
+  <button onclick="multiplexor()">RUN!</button>
+</div>
+
+<div>
+  <h3>Multiplexor Batched RPC</h3>
+  <select id="multiplexor-batched-method">
+    <option value="echo">echo</option>
+    <option value="sum">sum</option>
+  </select>
+  Arguments (<a href="http://www.ietf.org/rfc/rfc4627.txt">Valid JSON</a>): <input id="multiplexor-batched-args" value="[7, 8]" />
+  Calls count: <input id="multiplexor-batched-calls-count" value="2" />
+  <button onclick="multiplexor_batched()">RUN!</button>
+</div>
+
+<div>
+  <h3>Sum Authenticated Batched RPC</h3>
+  a: <input id="sum-authenticated-batched-a" value="5" />
+  b: <input id="sum-authenticated-batched-b" value="9" />
+  Auth token: <input id="sum-authenticated-batched-auth-token" value="secret2" />
+  Calls count: <input id="sum-authenticated-batched-calls-count" value="2" />
+  <button onclick="sum_authenticated_batched()">RUN!</button>
+</div>
+
+<div>
+  <h3>Sum Rate Limited RPC</h3>
+  a: <input id="sum-rate-limited-a" value="13" />
+  b: <input id="sum-rate-limited-b" value="2" />
+  Calls count: <input id="sum-rate-limited-calls-count" value="10" />
+  <button onclick="sum_rate_limited()">Try clicking many times!</button>
+</div>
+</body>
+</html>
