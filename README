@@ -61,8 +61,8 @@ web browsers:
 - JSON
 - Array.prototype.forEach
 It is possible to use hpajaxrpc even in ancient browsers if these features
-will be properly emulated. Google for proper emulations - there are over 9000
-of them on the Internet. Check out the following resources at first:
+are properly emulated. Google for proper emulations - there are over 9000
+of them all over the Internet. Check out the following resources at first:
 - http://en.wikipedia.org/wiki/XMLHttpRequest#History_and_support
 - https://github.com/douglascrockford/JSON-js
 - https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/forEach
@@ -168,6 +168,7 @@ Advanced usage.
     queued_rpc.run(rpc_endpoint, [auth_token, request_data], response_callback,
         finalize_callback);
   };
+  auth_queued_rpc = new hpajaxrpc.QueuedRpc(auth_queued_rpc_call);
   for (i = 0; i < 10; i++) {
     auth_queued_rpc.run('/sum-authenticated', [i, 30],
         function(result) { alert(result); },
@@ -182,17 +183,34 @@ Advanced usage.
         });
   }
 
+  // Response validation
+  validate_queued_rpc_call = function(rpc_endpoint, request_data,
+      response_callback, finalize_callback) {
+    var validate_response_callback = function(response_data) {
+      if (typeof(response_data) != 'number') {
+        throw 'response_data type be number';
+      }
+      response_callback(response_data);
+    };
+    queued_rpc.run(rpc_endpoint, request_data, validate_response_callback,
+        finalize_callback);
+  };
+  validate_queued_rpc = new hpajaxrpc.QueuedRpc(validate_queued_rpc_call);
+  for (i = 0; i < 10; i++) {
+    validate_queued_rpc.run('/sum-which-sometimes-sends-garbage', [i, 10],
+        function(result) { alert(result); },
+        function(status_code, status_data) {
+          if (status_code == hpajaxrpc.statusCodes.RESPONSE_CALLBACK_ERROR) {
+            alert('validation error: ' + status_data);
+          }
+        });
+  }
+
   // Batched authenticated RPCs (one auth token per batch) via queued_rpc.
   auth_batched_rpc_call = function(request_data, response_callback,
       finalize_callback) {
-    var auth_response_callback = function(response_data) {
-      if (!response_data[0]) {
-        throw 'authentication failed';
-      }
-      response_callback(response_data[1]);
-    };
     queued_rpc.run('/sum-batched-authenticated', [auth_token, request_data],
-        auth_response_callback, finalize_callback);
+        response_callback, finalize_callback);
   };
   auth_batched_rpc = new hpajaxrpc.BatchedRpc(auth_batched_rpc_call, 500);
   for (i = 0; i < 10; i++) {
@@ -203,8 +221,8 @@ Advanced usage.
             alert('error: status_code=' + status_code + ', status_data=[' +
                 status_data + ']');
             // The following values will be passed on authentication failure:
-            // status_code = RESPONSE_CALLBACK_ERROR
-            // status_data = 'authentication failed'
+            // status_code = HTTP_ERROR
+            // status_data = 403 (Forbidden HTTP status code)
           }
         });
   }
@@ -280,7 +298,7 @@ How to properly implement base_rpc_call?
 The base_rpc_call callback is passed into constructors of QueuedRpc,
 BatchedRpc and RateLimitedRpc classes. These classes call base_rpc_call
 whenever they decide to issue RPC. All these classes guarantee that the next
-base_rpc_call will be called only after execution of finalize_callback from
+base_rpc_call will be called only after the execution of finalize_callback from
 the previous call to base_rpc_call. So it is safe to use non-reentrant RPC
 implementations in base_rpc_call such as XMLHttpRequest and JsonRpc, wich don't
 support multiple outstanding RPC calls.
