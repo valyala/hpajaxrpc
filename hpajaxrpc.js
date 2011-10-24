@@ -170,7 +170,13 @@ hpajaxrpc = (function() {
           that._is_rpc_in_flight = false;
         }
         finalize_callbacks.forEach(function(finalize_callback) {
-          issueCallback(finalize_callback, status_code, status_data);
+          // Make sure each finalize_callback is always called.
+          try {
+            issueCallback(finalize_callback, status_code, status_data);
+          }
+          catch(e) {
+            // do nothing
+          }
         });
       };
       this._base_rpc_call(batched_request_data, batched_response_callback,
