@@ -59,13 +59,11 @@ The library uses the following 'modern' features, which can be missing in old
 web browsers:
 - XMLHttpRequest
 - JSON
-- Array.prototype.forEach
 It is possible to use hpajaxrpc even in ancient browsers if these features
 are properly emulated. Google for proper emulations - there are over 9000
 of them all over the Internet. Check out the following resources at first:
 - http://en.wikipedia.org/wiki/XMLHttpRequest#History_and_support
 - https://github.com/douglascrockford/JSON-js
-- https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/forEach
 - http://kangax.github.com/es5-compat-table/
 
 

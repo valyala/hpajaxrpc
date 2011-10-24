@@ -140,11 +140,14 @@ hpajaxrpc = (function() {
       var batched_request_data = [];
       var response_callbacks = [];
       var finalize_callbacks = [];
-      this._batched_rpc_args.forEach(function(rpc_args) {
+      var batched_rpc_args = this._batched_rpc_args;
+      var batched_rpc_args_length = batched_rpc_args.length;
+      for (var i = 0; i < batched_rpc_args_length; i++) {
+        var rpc_args = batched_rpc_args[i];
         batched_request_data.push(rpc_args[0]);
         response_callbacks.push(rpc_args[1]);
         finalize_callbacks.push(rpc_args[2]);
-      });
+      };
       this._batched_rpc_args = [];
       var batched_response_callback = function(batched_response_data) {
         if (!(batched_response_data instanceof Array)) {
@@ -157,13 +160,15 @@ hpajaxrpc = (function() {
               batched_response_data.length + ', expected size=' +
               response_callbacks.length;
         }
-        batched_response_data.forEach(function(response_data, index) {
+        var batched_response_data_length = batched_response_data.length;
+        for (var i = 0; i < batched_response_data_length; i++) {
+          var response_data = batched_response_data[i];
           try {
-            issueCallback(response_callbacks[index], response_data);
+            issueCallback(response_callbacks[i], response_data);
           }
           catch(e) {
-            var finalize_callback = finalize_callbacks[index];
-            finalize_callbacks[index] = null;
+            var finalize_callback = finalize_callbacks[i];
+            finalize_callbacks[i] = null;
             try {
               issueCallback(finalize_callback,
                   statusCodes.RESPONSE_CALLBACK_ERROR, e);
@@ -172,7 +177,7 @@ hpajaxrpc = (function() {
               // do nothing
             }
           }
-        });
+        };
       };
       var that = this;
       var batched_finalize_callback = function(status_code, status_data) {
@@ -182,7 +187,9 @@ hpajaxrpc = (function() {
         else {
           that._is_rpc_in_flight = false;
         }
-        finalize_callbacks.forEach(function(finalize_callback) {
+        var finalize_callbacks_length = finalize_callbacks.length;
+        for (var i = 0; i < finalize_callbacks_length; i++) {
+          var finalize_callback = finalize_callbacks[i];
           // Make sure each finalize_callback is always called.
           try {
             issueCallback(finalize_callback, status_code, status_data);
@@ -190,7 +197,7 @@ hpajaxrpc = (function() {
           catch(e) {
             // do nothing
           }
-        });
+        };
       };
       this._base_rpc_call(batched_request_data, batched_response_callback,
           batched_finalize_callback);
