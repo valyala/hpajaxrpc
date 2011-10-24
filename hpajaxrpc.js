@@ -158,7 +158,20 @@ hpajaxrpc = (function() {
               response_callbacks.length;
         }
         batched_response_data.forEach(function(response_data, index) {
-          issueCallback(response_callbacks[index], response_data);
+          try {
+            issueCallback(response_callbacks[index], response_data);
+          }
+          catch(e) {
+            var finalize_callback = finalize_callbacks[index];
+            finalize_callbacks[index] = null;
+            try {
+              issueCallback(finalize_callback,
+                  statusCodes.RESPONSE_CALLBACK_ERROR, e);
+            }
+            catch(e) {
+              // do nothing
+            }
+          }
         });
       };
       var that = this;
